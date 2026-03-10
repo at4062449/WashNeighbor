@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Become a Cleaner — WashNeighbor</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,700;1,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F7F5F0; --ink: #1A1A18; --muted: #8A8880;
+  --accent: #2D5A3D; --accent-light: #E8F0EB; --border: #E2DED8;
+  --card: #fff; --shadow: 0 2px 24px rgba(26,26,24,0.07);
+  --error: #c0392b;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--ink); min-height: 100vh; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+@keyframes spin { to{transform:rotate(360deg);} }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);} }
+
+/* NAV */
+nav {
+  position: sticky; top:0; z-index:100;
+  display: flex; align-items:center; justify-content:space-between;
+  padding: 18px 40px;
+  background: rgba(247,245,240,0.95); backdrop-filter:blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.logo { font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); letter-spacing:-0.5px; }
+.logo span { color:var(--ink); }
+.nav-back { font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); text-decoration:none; cursor:pointer; transition:color .2s; display:flex; align-items:center; gap:6px; }
+.nav-back:hover { color:var(--ink); }
+
+/* SPLIT LAYOUT */
+.page-wrap { display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 61px); }
+
+/* LEFT PANEL */
+.left-panel { background:var(--ink); color:var(--bg); padding:64px 56px; display:flex; flex-direction:column; justify-content:space-between; position:sticky; top:61px; height:calc(100vh - 61px); overflow:hidden; }
+.left-top { flex:1; }
+.left-eyebrow { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--accent); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.left-eyebrow::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s ease-in-out infinite; }
+.left-title { font-family:'Fraunces',serif; font-size:clamp(30px,3.5vw,44px); font-weight:700; letter-spacing:-1.5px; line-height:1.05; margin-bottom:16px; }
+.left-title em { font-style:italic; font-weight:300; color:var(--accent); }
+.left-desc { font-size:11px; color:rgba(247,245,240,.45); line-height:1.9; margin-bottom:44px; max-width:320px; }
+
+/* Earnings calc */
+.calc-box { border:1px solid rgba(247,245,240,.1); padding:24px; margin-bottom:40px; }
+.calc-title { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:rgba(247,245,240,.3); margin-bottom:20px; }
+.calc-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(247,245,240,.07); }
+.calc-row:last-child { border-bottom:none; padding-bottom:0; }
+.calc-label { font-size:10px; color:rgba(247,245,240,.45); }
+.calc-val { font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:var(--accent); }
+.calc-val.highlight { font-size:24px; }
+
+/* Testimonial */
+.testimonial { border-left:2px solid var(--accent); padding-left:16px; }
+.testimonial p { font-size:11px; color:rgba(247,245,240,.45); line-height:1.8; font-style:italic; margin-bottom:10px; }
+.testimonial-author { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:rgba(247,245,240,.25); }
+
+/* RIGHT PANEL — FORM */
+.right-panel { padding:64px 56px; background:var(--bg); overflow-y:auto; }
+.form-step { display:none; animation:fadeUp .4s ease both; }
+.form-step.active { display:block; }
+
+.step-counter { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:8px; }
+.form-title { font-family:'Fraunces',serif; font-size:clamp(24px,3vw,34px); font-weight:700; letter-spacing:-1px; margin-bottom:8px; line-height:1.1; }
+.form-title em { font-style:italic; font-weight:300; }
+.form-desc { font-size:11px; color:var(--muted); line-height:1.8; margin-bottom:36px; }
+
+/* Progress dots */
+.progress-dots { display:flex; gap:6px; margin-bottom:40px; }
+.dot { width:28px; height:3px; background:var(--border); transition:background .3s; }
+.dot.active { background:var(--accent); }
+.dot.done { background:var(--ink); }
+
+/* Fields */
+.field { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+.field-label { font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+.field-hint { font-size:10px; color:var(--accent); line-height:1.5; }
+.field-err { font-size:9px; color:var(--error); display:none; }
+.field-err.show { display:block; }
+input[type=text],input[type=email],input[type=tel],input[type=number],select,textarea {
+  width:100%; padding:13px 14px; border:1px solid var(--border);
+  background:var(--card); font-family:'DM Mono',monospace; font-size:13px; color:var(--ink);
+  outline:none; transition:border-color .2s; appearance:none;
+}
+input:focus,select:focus,textarea:focus { border-color:var(--accent); }
+input::placeholder,textarea::placeholder { color:var(--muted); }
+input.err,select.err,textarea.err { border-color:var(--error); }
+textarea { resize:vertical; line-height:1.7; }
+
+/* Radio cards */
+.radio-group { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.radio-card { border:1px solid var(--border); padding:16px; cursor:pointer; transition:all .15s; background:var(--card); position:relative; }
+.radio-card input { position:absolute; opacity:0; pointer-events:none; }
+.radio-card.selected { border-color:var(--accent); background:var(--accent-light); }
+.radio-card .rc-title { font-size:12px; color:var(--ink); margin-bottom:3px; }
+.radio-card .rc-desc { font-size:10px; color:var(--muted); line-height:1.5; }
+.radio-card .rc-check { position:absolute; top:12px; right:12px; width:14px; height:14px; border:1px solid var(--border); border-radius:50%; transition:all .15s; }
+.radio-card.selected .rc-check { background:var(--accent); border-color:var(--accent); }
+
+/* Capacity buttons */
+.cap-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.cap-btn { padding:14px 8px; border:1px solid var(--border); background:var(--card); font-family:'DM Mono',monospace; cursor:pointer; transition:all .15s; text-align:center; }
+.cap-btn .cn { font-family:'Fraunces',serif; font-size:20px; font-weight:700; display:block; color:var(--muted); }
+.cap-btn .cl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.cap-btn.selected { border-color:var(--accent); background:var(--accent-light); }
+.cap-btn.selected .cn,.cap-btn.selected .cl { color:var(--accent); }
+.cap-btn:hover { border-color:var(--accent); }
+
+/* Privacy note */
+.priv-note { display:flex; gap:12px; align-items:flex-start; background:var(--accent-light); border-left:3px solid var(--accent); padding:14px 16px; margin-bottom:20px; }
+.priv-note svg { color:var(--accent); flex-shrink:0; margin-top:1px; }
+.priv-note p { font-size:10px; color:var(--ink); line-height:1.7; }
+.priv-note strong { color:var(--accent); }
+
+/* Inline info */
+.info-box { background:var(--card); border:1px solid var(--border); padding:16px 20px; margin-bottom:20px; display:flex; gap:12px; align-items:flex-start; }
+.info-box svg { color:var(--accent); flex-shrink:0; margin-top:1px; }
+.info-box p { font-size:10px; color:var(--muted); line-height:1.7; }
+.info-box strong { color:var(--ink); }
+
+/* Nav buttons */
+.btn-row { display:flex; gap:10px; margin-top:36px; }
+.btn-next { flex:1; padding:15px; background:var(--ink); color:var(--bg); border:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:1.5px; transition:background .2s,transform .15s; display:flex; align-items:center; justify-content:center; gap:8px; }
+.btn-next:hover:not(:disabled) { background:var(--accent); transform:translateY(-1px); }
+.btn-next:disabled { background:var(--muted); cursor:not-allowed; transform:none; }
+.btn-back { padding:15px 20px; background:none; color:var(--muted); border:1px solid var(--border); cursor:pointer; font-family:'DM Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:1px; transition:all .2s; }
+.btn-back:hover { color:var(--ink); border-color:var(--ink); }
+.mini-spin { width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .6s linear infinite; display:none; }
+.btn-next.loading .mini-spin { display:block; }
+.btn-next.loading span { display:none; }
+
+/* SUCCESS */
+.success-panel { display:none; animation:fadeUp .5s ease both; }
+.success-panel.show { display:block; }
+.success-icon { width:64px; height:64px; background:var(--accent-light); border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px; }
+.success-icon svg { color:var(--accent); }
+.success-title { font-family:'Fraunces',serif; font-size:32px; font-weight:700; letter-spacing:-1px; margin-bottom:12px; }
+.success-title em { font-style:italic; font-weight:300; color:var(--accent); }
+.success-desc { font-size:11px; color:var(--muted); line-height:1.9; margin-bottom:28px; max-width:400px; }
+.next-steps { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+.ns-item { display:flex; gap:14px; align-items:flex-start; font-size:11px; }
+.ns-num { width:22px; height:22px; border:1px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--accent); flex-shrink:0; margin-top:1px; }
+.ns-text { color:var(--muted); line-height:1.6; }
+.ns-text strong { color:var(--ink); }
+.profile-preview { background:var(--card); border:1px solid var(--border); padding:20px; margin-top:24px; }
+.pp-label { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:16px; }
+.pp-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); }
+.pp-row:last-child { border-bottom:none; }
+.pp-key { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+.pp-val { font-family:'Fraunces',serif; font-size:16px; font-weight:700; }
+.pp-val.accent { color:var(--accent); }
+
+@media(max-width:900px) {
+  .page-wrap { grid-template-columns:1fr; }
+  .left-panel { position:static; height:auto; padding:40px 24px; }
+  .right-panel { padding:40px 24px; }
+  .calc-box { display:none; }
+  nav { padding:16px 20px; }
+}
+@media(max-width:480px) {
+  .cap-grid { grid-template-columns:repeat(2,1fr); }
+  .radio-group { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Wash<span>Neighbor</span></div>
+  <a class="nav-back" href="washneighbor-home-2v.html">← Back to home</a>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="left-top">
+      <div class="left-eyebrow">For cleaners</div>
+      <h1 class="left-title">Your washer.<br><em>Their laundry.</em><br>Your income.</h1>
+      <p class="left-desc">Register in under 2 minutes. Clients in your zip code are already waiting — we notify them the moment you're live.</p>
+
+      <div class="calc-box">
+        <div class="calc-title">Estimated monthly earnings</div>
+        <div class="calc-row">
+          <span class="calc-label">2 loads/week × 4 weeks</span>
+          <span class="calc-val">8 loads</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">Avg. load weight</span>
+          <span class="calc-val">12 lbs</span>
+        </div>
+        <div class="calc-row">
+          <span class="calc-label">At $1.20/lb</span>
+          <span class="calc-val highlight">$115 / mo</span>
+        </div>
+      </div>
+
+      <div class="testimonial">
+        <p>"I was already doing laundry every weekend. Now two of those loads are for neighbors. I made $90 last month without changing my routine."</p>
+        <div class="testimonial-author">Maria S. · Williamsburg, NY · 47 washes</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:rgba(247,245,240,.2);letter-spacing:.5px;margin-top:40px;">© 2025 WashNeighbor · Privacy · Terms</div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- STEP 1: Essentials -->
+    <div class="form-step active" id="step-1">
+      <div class="step-counter">Step 1 of 3</div>
+      <h2 class="form-title">Let's get you <em>listed.</em></h2>
+      <p class="form-desc">Three steps, under 2 minutes. We only ask what's essential to get your profile live.</p>
+      <div class="progress-dots">
+        <div class="dot active" id="d1"></div>
+        <div class="dot" id="d2"></div>
+        <div class="dot" id="d3"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">First name</div>
+        <input type="text" id="f-name" placeholder="Maria" oninput="validate1()">
+        <div class="field-err" id="err-name">Please enter your first name</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Email</div>
+        <input type="email" id="f-email" placeholder="you@example.com" oninput="validate1()">
+        <div class="field-err" id="err-email">Please enter a valid email</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Phone <span style="color:var(--muted);font-size:9px;">(optional — clients contact you here)</span></div>
+        <input type="tel" id="f-phone" placeholder="+1 (555) 000-0000" oninput="validate1()">
+      </div>
+
+      <div class="field">
+        <div class="field-label">Your zip code</div>
+        <div class="priv-note">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <p><strong>Your exact address is never shown.</strong> Clients only see your zip code and approximate distance. You share your address directly — only when you feel ready.</p>
+        </div>
+        <input type="text" id="f-zip" placeholder="11211" maxlength="5" oninput="this.value=this.value.replace(/\D/g,'');validate1()">
+        <div class="field-err" id="err-zip">Please enter a 5-digit zip code</div>
+        <div class="field-hint" id="zip-demand" style="display:none;"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Do you own a washer and dryer?</div>
+        <div class="radio-group">
+          <label class="radio-card" id="rc-yes" onclick="selectWD('yes')">
+            <input type="radio" name="wd" value="yes">
+            <div class="rc-check" id="rcc-yes"></div>
+            <div class="rc-title">Yes, I own both</div>
+            <div class="rc-desc">Washer + dryer at home</div>
+          </label>
+          <label class="radio-card" id="rc-shared" onclick="selectWD('shared')">
+            <input type="radio" name="wd" value="shared">
+            <div class="rc-check" id="rcc-shared"></div>
+            <div class="rc-title">Shared in building</div>
+            <div class="rc-desc">Access to building machines</div>
+          </label>
+        </div>
+        <div class="field-err" id="err-wd">Please select an option</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-next" id="btn1" onclick="goTo(2)" disabled><span>Continue →</span><div class="mini-spin"></div></button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Pricing & Capacity -->
+    <div class="form-step" id="step-2">
+      <div class="step-counter">Step 2 of 3</div>
+      <h2 class="form-title">Pricing & <em>capacity.</em></h2>
+      <p class="form-desc">Two quick decisions. You can change both at any time from your dashboard.</p>
+      <div class="progress-dots">
+        <div class="dot done" id="d1b"></div>
+        <div class="dot active" id="d2b"></div>
+        <div class="dot" id="d3b"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Your price per lb</div>
+        <div class="field-hint" style="margin-bottom:10px;">💡 Most cleaners on WashNeighbor charge $1.00–$1.80/lb. Avg. is $1.20. A typical 10 lb load = $12–$18 for you.</div>
+        <div style="position:relative;">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink);pointer-events:none;font-size:14px;">$</span>
+          <input type="number" id="f-price" step="0.05" min="0.50" max="9.99" placeholder="1.20" style="padding-left:28px;" oninput="updateCalc();validate2()">
+        </div>
+        <div class="field-err" id="err-price">Please enter a price (min $0.50/lb)</div>
+        <!-- Live earnings preview -->
+        <div id="earnings-preview" style="display:none;margin-top:10px;padding:12px 14px;background:var(--accent-light);border-left:3px solid var(--accent);">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--accent);margin-bottom:6px;">At your price</div>
+          <div style="display:flex;gap:24px;">
+            <div><div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;" id="preview-load">$—</div><div style="font-size:9px;color:var(--muted);">per 10 lb load</div></div>
+            <div><div style="font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:var(--accent);" id="preview-month">$—</div><div style="font-size:9px;color:var(--muted);">est. per month (2x/wk)</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Max bags per client (standard moving bag ≈ 2 cu ft)</div>
+        <div class="cap-grid" style="margin-top:8px;">
+          <button class="cap-btn" onclick="selectCap(this,'1–2')"><span class="cn">1–2</span><span class="cl">bags</span></button>
+          <button class="cap-btn" onclick="selectCap(this,'3–4')"><span class="cn">3–4</span><span class="cl">bags</span></button>
+          <button class="cap-btn" onclick="selectCap(this,'5–6')"><span class="cn">5–6</span><span class="cl">bags</span></button>
+          <button class="cap-btn" onclick="selectCap(this,'7+')"><span class="cn">7+</span><span class="cl">bags</span></button>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:6px;">Tip: starting with 1–2 bags helps you ease in without stress</div>
+        <div class="field-err" id="err-cap">Please select a capacity</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Pickup preference</div>
+        <div class="radio-group">
+          <label class="radio-card" id="rc-dropoff" onclick="selectPickup('dropoff')">
+            <input type="radio" name="pickup" value="dropoff">
+            <div class="rc-check" id="rcc-dropoff"></div>
+            <div class="rc-title">Drop-off only <span style="font-size:8px;background:var(--accent-light);color:var(--accent);padding:2px 5px;">recommended</span></div>
+            <div class="rc-desc">Clients come to you. Zero driving, maximum simplicity.</div>
+          </label>
+          <label class="radio-card" id="rc-delivery" onclick="selectPickup('delivery')">
+            <input type="radio" name="pickup" value="delivery">
+            <div class="rc-check" id="rcc-delivery"></div>
+            <div class="rc-title">Offer delivery too</div>
+            <div class="rc-desc">You pick up & return. Extra fee applies.</div>
+          </label>
+        </div>
+        <div class="field-err" id="err-pickup">Please select a preference</div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="goTo(1)">← Back</button>
+        <button class="btn-next" id="btn2" onclick="goTo(3)" disabled><span>Continue →</span><div class="mini-spin"></div></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Confirm -->
+    <div class="form-step" id="step-3">
+      <div class="step-counter">Step 3 of 3</div>
+      <h2 class="form-title">One last <em>thing.</em></h2>
+      <p class="form-desc">Review your details and go live. Clients in your zip code will be notified immediately.</p>
+      <div class="progress-dots">
+        <div class="dot done"></div>
+        <div class="dot done"></div>
+        <div class="dot active"></div>
+      </div>
+
+      <!-- Summary card -->
+      <div style="background:var(--card);border:1px solid var(--border);padding:24px;margin-bottom:24px;" id="summary-card">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:16px;">Your profile preview</div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:18px;font-weight:700;color:white;flex-shrink:0;" id="s-avatar">?</div>
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:17px;font-weight:700;" id="s-name">—</div>
+            <div style="font-size:10px;color:var(--muted);">Zip <span id="s-zip">—</span> · New cleaner</div>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:11px;">
+            <svg width="11" height="11" fill="#F4A614" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            New
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);">
+          <div style="background:var(--bg);padding:14px;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">Washes done</div>
+            <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;">0</div>
+          </div>
+          <div style="background:var(--bg);padding:14px;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">Price per lb</div>
+            <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--accent);" id="s-price">$—</div>
+          </div>
+          <div style="background:var(--bg);padding:14px;grid-column:span 2;">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;">Max capacity</div>
+            <div style="font-family:'Fraunces',serif;font-size:16px;font-weight:700;" id="s-cap">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>People waiting in zip <strong id="s-zip2">—</strong> will receive an email notification as soon as you submit. Your address remains private — never shown on your public profile.</p>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Anything you want clients to know? <span style="color:var(--muted);">(optional)</span></div>
+        <textarea id="f-bio" rows="3" placeholder="e.g. I sort carefully, pre-treat stains, and fold everything neatly. I speak Spanish and English…"></textarea>
+      </div>
+
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+        <input type="checkbox" id="f-agree" style="width:auto;margin-top:3px;accent-color:var(--accent);" onchange="validate3()">
+        <label for="f-agree" style="font-size:10px;color:var(--muted);line-height:1.7;cursor:pointer;">I commit to treating every client's laundry with care — sorting by color, reading labels, and pre-treating stains when possible.</label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-back" onclick="goTo(2)">← Back</button>
+        <button class="btn-next" id="btn3" onclick="submitForm()" disabled><span>Go live →</span><div class="mini-spin"></div></button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-panel" id="success-panel">
+      <div class="success-icon">
+        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 class="success-title">You're <em>ready!</em></h2>
+      <p class="success-desc">Welcome to WashNeighbor 🎉 Your profile has been submitted and clients in your zip code will be notified. Get ready for your first order!</p>
+
+      <div class="next-steps">
+        <div class="ns-item">
+          <div class="ns-num">1</div>
+          <div class="ns-text"><strong>Expect a message soon.</strong> Clients in your area are already waiting — they'll reach out via email or phone when ready to send their laundry.</div>
+        </div>
+        <div class="ns-item">
+          <div class="ns-num">2</div>
+          <div class="ns-text"><strong>Share your address when you're comfortable.</strong> Your location stays completely private until you decide to share it. You're always in control.</div>
+        </div>
+        <div class="ns-item">
+          <div class="ns-num">3</div>
+          <div class="ns-text"><strong>Log every wash through the portal.</strong> Each logged wash builds your public count — the more you log, the higher you rank and the more clients find you.</div>
+        </div>
+      </div>
+
+      <div class="profile-preview">
+        <div class="pp-label">Your profile summary</div>
+        <div class="pp-row"><span class="pp-key">Washes logged</span><span class="pp-val">0</span></div>
+        <div class="pp-row"><span class="pp-key">Rating</span><span class="pp-val">—</span></div>
+        <div class="pp-row"><span class="pp-key">Price per lb</span><span class="pp-val accent" id="final-price">$—</span></div>
+        <div class="pp-row"><span class="pp-key">Zip code</span><span class="pp-val" id="final-zip">—</span></div>
+      </div>
+
+      <a href="washneighbor-home-2v.html" style="display:inline-block;margin-top:24px;padding:13px 28px;background:var(--ink);color:var(--bg);text-decoration:none;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;transition:background .2s;" onmouseover="this.style.background='#2D5A3D'" onmouseout="this.style.background='#1A1A18'">← Back to home</a>
+    </div>
+
+  </div><!-- /right-panel -->
+</div><!-- /page-wrap -->
+
+<script>
+// Demand by zip (same as home page)
+const zipDemand = {
+  '11211':31,'11201':12,'11215':19,'11238':9,'11205':7,
+  '11226':11,'10025':22,'10013':15,'07030':9,'07302':6,
+  '11101':14,'11102':8,'11103':5,'10001':18,'10002':13,
+};
+
+let state = { wd: null, pickup: null, cap: null, step: 1 };
+
+// ── NAVIGATION ──
+function goTo(n) {
+  if (n > state.step) {
+    // animate out
+    const btn = document.getElementById('btn' + state.step);
+    if (btn) { btn.classList.add('loading'); }
+    setTimeout(() => {
+      if (btn) btn.classList.remove('loading');
+      state.step = n;
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.getElementById('step-' + n).classList.add('active');
+      if (n === 3) buildSummary();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 500);
+  } else {
+    state.step = n;
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step-' + n).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+// ── VALIDATION ──
+function validate1() {
+  const name = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const zip = document.getElementById('f-zip').value.trim();
+
+  // Zip demand hint
+  if (zip.length === 5) {
+    const d = zipDemand[zip] || Math.floor(Math.random()*15)+3;
+    const hint = document.getElementById('zip-demand');
+    hint.textContent = `✓ ${d} people are waiting for a cleaner in ${zip}`;
+    hint.style.display = 'block';
+  } else {
+    document.getElementById('zip-demand').style.display = 'none';
+  }
+
+  const ok = name.length > 0 && email.includes('@') && zip.length === 5 && state.wd;
+  document.getElementById('btn1').disabled = !ok;
+}
+
+function validate2() {
+  const price = parseFloat(document.getElementById('f-price').value);
+  const ok = !isNaN(price) && price >= 0.5 && state.cap && state.pickup;
+  document.getElementById('btn2').disabled = !ok;
+}
+
+function validate3() {
+  const agreed = document.getElementById('f-agree').checked;
+  document.getElementById('btn3').disabled = !agreed;
+}
+
+// ── RADIO SELECTORS ──
+function selectWD(val) {
+  state.wd = val;
+  ['yes','shared'].forEach(k => {
+    document.getElementById('rc-'+k).classList.toggle('selected', k===val);
+  });
+  validate1();
+}
+
+function selectPickup(val) {
+  state.pickup = val;
+  ['dropoff','delivery'].forEach(k => {
+    document.getElementById('rc-'+k).classList.toggle('selected', k===val);
+  });
+  validate2();
+}
+
+function selectCap(btn, val) {
+  document.querySelectorAll('.cap-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.cap = val;
+  validate2();
+}
+
+// ── EARNINGS PREVIEW ──
+function updateCalc() {
+  const price = parseFloat(document.getElementById('f-price').value);
+  const preview = document.getElementById('earnings-preview');
+  if (isNaN(price) || price < 0.5) { preview.style.display = 'none'; return; }
+  preview.style.display = 'block';
+  document.getElementById('preview-load').textContent = '$' + (price * 10).toFixed(2);
+  document.getElementById('preview-month').textContent = '$' + (price * 10 * 8).toFixed(0);
+}
+
+// ── SUMMARY ──
+function buildSummary() {
+  const name = document.getElementById('f-name').value.trim();
+  const zip = document.getElementById('f-zip').value.trim();
+  const price = parseFloat(document.getElementById('f-price').value);
+  document.getElementById('s-avatar').textContent = name[0]?.toUpperCase() || '?';
+  document.getElementById('s-name').textContent = name;
+  document.getElementById('s-zip').textContent = zip;
+  document.getElementById('s-zip2').textContent = zip;
+  document.getElementById('s-price').textContent = isNaN(price) ? '$—' : '$' + price.toFixed(2);
+  document.getElementById('s-cap').textContent = (state.cap || '—') + ' bags per client';
+}
+
+// ── SUBMIT ──
+function submitForm() {
+  const btn = document.getElementById('btn3');
+  btn.classList.add('loading');
+
+  const name = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const zip = document.getElementById('f-zip').value.trim();
+  const price = parseFloat(document.getElementById('f-price').value);
+
+  // Send to Tally silently in background
+  const body = 'name=' + encodeURIComponent(name)
+    + '&email=' + encodeURIComponent(email)
+    + '&phone=' + encodeURIComponent(phone)
+    + '&zip=' + encodeURIComponent(zip)
+    + '&price=' + encodeURIComponent(price)
+    + '&cap=' + encodeURIComponent(state.cap || '')
+    + '&pickup=' + encodeURIComponent(state.pickup || '');
+
+  fetch('https://tally.so/r/ZjVPeV', {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body
+  }).catch(() => {});
+
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    document.getElementById('step-3').style.display = 'none';
+    const sp = document.getElementById('success-panel');
+    sp.classList.add('show');
+    document.getElementById('final-price').textContent = '$' + price.toFixed(2);
+    document.getElementById('final-zip').textContent = zip;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 1000);
+}
+</script>
+</body>
+</html>
